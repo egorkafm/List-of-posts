@@ -16,16 +16,24 @@ import { usePosts } from './hooks/usePost'
 import PostService from './API/PostService'
 import Loader from './Components/UI/loader/Loader'
 import { useFetching } from './hooks/useFetching'
+import { getPageCount, getPagesArray } from './utils/pages'
+import Pagination from './Components/UI/pagination/Pagination'
 
 function App() {
 
 	const [posts, setPosts] = useState([])
 	const [filter, setFilter] = useState({sort: '', quary: ''})
 	const [modal, setModal] = useState(false)
+	const [totalPages, setTotalPages] = useState(0)
+	const [limit, setLimit] = useState(10)
+	const [page, setPage] = useState(1)
 	const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.quary)
-	const [featchPosts, isPostsLoading, postError] = useFetching(async () => {
-		const posts = await PostService.getAll()
-		setPosts(posts)
+
+	const [featchPosts, isPostsLoading, postError] = useFetching(async (limit, page) => {
+		const response = await PostService.getAll(limit, page)
+		setPosts(response.data)
+		const totalCount = response.headers['x-total-count'];
+		setTotalPages(getPageCount(totalCount, limit))
 	})
 
 	const createPost = (newPost) => {
@@ -34,11 +42,16 @@ function App() {
 	}
 
 	useEffect(() => {
-		featchPosts()
+		featchPosts(limit, page)
 	}, [])
 	
 	const removePost = (post) => {
 		setPosts(posts.filter(p => p.id !== post.id))
+	}
+
+	const changePage = (page) => {
+		setPage(page)
+		featchPosts(limit, page)
 	}
 
   return (
@@ -63,6 +76,11 @@ function App() {
 				?	<div style={{display: 'flex', justifyContent: 'center', marginTop: '50px'}}><Loader /></div>
 				:	<PostList remove={removePost} posts={sortedAndSearchedPosts} title='List of posts'/>
 			}
+			<Pagination
+				page={page}
+				changePage={changePage}
+				totalPages={totalPages}
+			/>
 		</div>
   )
 }
