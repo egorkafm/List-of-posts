@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 // import Counter from './Components/Counter'
 // import ClassCounter from './Components/ClassCounter'
 import "./style/App.css"
@@ -11,32 +11,28 @@ import PostForm from './Components/PostForm'
 import PostFilter from './Components/PostFilter'
 import MyModal from './Components/UI/modal/MyModal'
 import MyButton from './Components/UI/button/MyButton'
+import { usePosts } from './hooks/usePost'
+import axios from 'axios'
 
 function App() {
 	
-	const [posts, setPosts] = useState([
-		{id: 1, title: 'аа', body:'бб'},
-		{id: 2, title: 'гг 2', body:'аа'},
-		{id: 3, title: 'вв 3', body:'яя'},
-	])
-	
+	const [posts, setPosts] = useState([])
 	const [filter, setFilter] = useState({sort: '', quary: ''})
 	const [modal, setModal] = useState(false)
-
-	const sortedPosts = useMemo(() => {
-		if (filter.sort) {
-			return [...posts].sort((a, b) => a[filter.sort].localeCompare(b[filter.sort]))
-		}
-		return posts;
-	}, [filter.sort, posts])
-
-	const sortedAndSearchedPosts = useMemo(() => {
-		return sortedPosts.filter(post => post.title.toLowerCase().includes(filter.quary.toLowerCase()))
-	}, [filter.quary, sortedPosts])
+	const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.quary)
 
 	const createPost = (newPost) => {
 		setPosts([...posts, newPost])
 		setModal(false)
+	}
+
+	useEffect(() => {
+		featchPosts()
+	}, [])
+
+	async function featchPosts() {
+		const response = await axios.get('https://jsonplaceholder.typicode.com/posts')
+		setPosts(response.data)
 	}
 	
 	const removePost = (post) => {
