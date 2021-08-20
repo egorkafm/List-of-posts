@@ -15,14 +15,18 @@ import { usePosts } from './hooks/usePost'
 // import axios from 'axios'
 import PostService from './API/PostService'
 import Loader from './Components/UI/loader/Loader'
+import { useFetching } from './hooks/useFetching'
 
 function App() {
-	
+
 	const [posts, setPosts] = useState([])
 	const [filter, setFilter] = useState({sort: '', quary: ''})
 	const [modal, setModal] = useState(false)
 	const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.quary)
-	const [isPostsLoading, setIsPostsLoading] = useState(false)
+	const [featchPosts, isPostsLoading, postError] = useFetching(async () => {
+		const posts = await PostService.getAll()
+		setPosts(posts)
+	})
 
 	const createPost = (newPost) => {
 		setPosts([...posts, newPost])
@@ -32,15 +36,6 @@ function App() {
 	useEffect(() => {
 		featchPosts()
 	}, [])
-
-	async function featchPosts() {
-		setIsPostsLoading(true)
-		setTimeout(async () => {
-			const posts = await PostService.getAll()
-			setPosts(posts)
-			setIsPostsLoading(false)
-		}, 1000)
-	}
 	
 	const removePost = (post) => {
 		setPosts(posts.filter(p => p.id !== post.id))
@@ -61,6 +56,9 @@ function App() {
 				filter={filter}
 				setFilter={setFilter}
 			/>
+			{postError &&
+				<h2>An error has occurred ${postError}</h2>
+			}
 			{isPostsLoading
 				?	<div style={{display: 'flex', justifyContent: 'center', marginTop: '50px'}}><Loader /></div>
 				:	<PostList remove={removePost} posts={sortedAndSearchedPosts} title='List of posts'/>
